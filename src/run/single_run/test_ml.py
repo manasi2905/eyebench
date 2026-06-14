@@ -33,6 +33,8 @@ from src.configs.models.ml.DummyClassifier import (
     DummyClassifierMLArgs,
     DummyRegressorMLArgs,
 )  # noqa: F401
+from src.configs.models.ml.KNNeighbors import KNNMLArgs  # noqa: F401
+from src.configs.models.ml.LRKNNEnsemble import LRKNNEnsembleMLArgs  # noqa: F401
 from src.configs.models.ml.LogisticRegression import (
     LinearMeziereArgs,
     LinearRegressionArgs,
@@ -62,6 +64,8 @@ CLASSIFICATION_MODEL_CONFIGS = [
     # XGBoostMLArgs,
     RandomForestMLArgs,
     LogisticRegressionMLArgs,
+    KNNMLArgs,
+    LRKNNEnsembleMLArgs,
     LogisticMeziereArgs,
     DummyClassifierMLArgs,
 ]  # noqa: F401

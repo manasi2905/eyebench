@@ -17,6 +17,8 @@ from src.configs.models.ml.SVM import (
     SupportVectorMachineMLArgs,
     SupportVectorRegressorMLArgs,
 )
+from src.configs.models.ml.KNNeighbors import KNNMLArgs
+from src.configs.models.ml.LRKNNEnsemble import LRKNNEnsembleMLArgs
 from src.configs.models.ml.XGBoost import XGBoostMLArgs, XGBoostRegressorMLArgs
 from src.configs.trainers import TrainerML
 from src.models.base_model import BaseMLModel, register_model
@@ -96,6 +98,38 @@ class SupportVectorMachineMLModel(BaseMLModel):
     ):
         super().__init__(
             model_args=model_args, trainer_args=trainer_args, data_args=data_args
+        )
+
+@register_model
+class KNNMLModel(BaseMLModel):
+    """K-Nearest Neighbors classifier."""
+
+    def __init__(
+        self,
+        model_args: KNNMLArgs,
+        trainer_args: TrainerML,
+        data_args=DataArgs,
+    ):
+        super().__init__(
+            model_args=model_args,
+            trainer_args=trainer_args,
+            data_args=data_args,
+        )
+
+@register_model
+class LRKNNEnsembleMLModel(BaseMLModel):
+    """Probability-averaging Logistic Regression and KNN ensemble."""
+
+    def __init__(
+        self,
+        model_args: LRKNNEnsembleMLArgs,
+        trainer_args: TrainerML,
+        data_args=DataArgs,
+    ):
+        super().__init__(
+            model_args=model_args,
+            trainer_args=trainer_args,
+            data_args=data_args,
         )
 
 

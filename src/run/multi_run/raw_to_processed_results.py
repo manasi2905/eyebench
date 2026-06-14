@@ -589,6 +589,8 @@ if __name__ == '__main__':
         'SupportVectorMachineMLArgs',
         # 'XGBoostMLArgs',
         'LogisticRegressionMLArgs',
+        'KNNMLArgs',
+        'LRKNNEnsembleMLArgs',
         'LogisticMeziereArgs',
         'DummyClassifierMLArgs',
         'RandomForestMLArgs',

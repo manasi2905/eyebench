@@ -108,7 +108,7 @@ class PoTeCProcessor(DatasetProcessor):
 
             if not aoi_match.empty:
                 first_match = aoi_match.iloc[0]
-                word_values[i] = first_match['character']
+                word_values[i] = first_match['word']
                 aoi_values[i] = int(first_match['aoi'])
 
         return page_indices, word_values, aoi_values, start_line, end_line
@@ -253,7 +253,7 @@ class PoTeCProcessor(DatasetProcessor):
         batch_size = 100
 
         for i in tqdm(range(0, len(groups), batch_size), desc='Processing batches'):
-            batch = Parallel(n_jobs=-1, backend='threading')(
+            batch = Parallel(n_jobs=1)(
                 delayed(self._extract_linguistic_features_for_group)(
                     g, nlp, surp_extractor
                 )

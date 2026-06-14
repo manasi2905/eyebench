@@ -43,7 +43,7 @@ class LogisticRegressionMLArgs(MLModelArgs):
     sklearn_pipeline_param_clf__solver: str = 'lbfgs'
     sklearn_pipeline_param_clf__random_state: int = 1
     sklearn_pipeline_param_clf__max_iter: int = 1000
-    sklearn_pipeline_param_clf__class_weight: str = 'balanced'
+    sklearn_pipeline_param_clf__class_weight: str | None = None
     sklearn_pipeline_param_scaler__with_mean: bool = True
     sklearn_pipeline_param_scaler__with_std: bool = True
 
