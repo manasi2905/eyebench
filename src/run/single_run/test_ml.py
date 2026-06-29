@@ -10,6 +10,7 @@ __summary__:
 
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -47,6 +48,11 @@ from src.configs.models.ml.SVM import (
     SupportVectorMachineMLArgs,
     SupportVectorRegressorMLArgs,
 )  # noqa: F401
+from src.configs.models.ml.StackingEnsemble import (  # noqa: F401
+    StackingEnsembleHeterogeneousMLArgs,
+    StackingEnsembleMLArgs,
+    StackingEnsembleReadingSpeedMLArgs,
+)
 from src.configs.models.ml.XGBoost import (  # noqa: F401
     XGBoostMLArgs,
     XGBoostRegressorMLArgs,
@@ -63,6 +69,9 @@ CLASSIFICATION_MODEL_CONFIGS = [
     RandomForestMLArgs,
     LogisticRegressionMLArgs,
     LogisticMeziereArgs,
+    StackingEnsembleHeterogeneousMLArgs,
+    StackingEnsembleMLArgs,
+    StackingEnsembleReadingSpeedMLArgs,
     DummyClassifierMLArgs,
 ]  # noqa: F401
 REGRESSION_MODEL_CONFIGS = [
@@ -188,8 +197,8 @@ class Experiment:
 
     dataset_name: str = field(init=False)
     model_name: str = field(init=False)
-    model_args: dataclass
-    data_args: dataclass
+    model_args: type[MLModelArgs]
+    data_args: type
     save_folder_name: Path = field(default_factory=Path)
     sweeps: list[Sweep] = field(default_factory=list)
     wandb_project: str = 'ml_debug'
@@ -253,10 +262,10 @@ def checks(experiments_list: list[Experiment]) -> None:
 
 
 def predict_on_val_and_test(
-    model: torch.nn.Module,
-    val_datasets: list[np.ndarray],
-    test_datasets: list[np.ndarray],
-) -> list[np.ndarray]:
+    model: Any,
+    val_datasets: list[Any],
+    test_datasets: list[Any],
+) -> list[tuple[torch.Tensor, torch.Tensor | None, torch.Tensor]]:
     """Predict on all val and test datasets, returning one list of results."""
     results = []
     # Predict on validation datasets
@@ -375,6 +384,15 @@ def process_single_run(data_args, trainer_args, model_args, fold_index) -> pd.Da
         fold_index=fold_index,
     )
 
+    if hasattr(model, 'predict_base_probabilities'):
+        datasets = [*dm.val_datasets, *dm.test_datasets]
+        base_probabilities = np.concatenate(
+            [model.predict_base_probabilities(dataset) for dataset in datasets],
+            axis=0,
+        )
+        for model_index, base_model_name in enumerate(model.meta_feature_names):
+            res[f'base_{base_model_name}'] = base_probabilities[:, model_index]
+
     # Save results
     save_path = (
         Path('results/raw')
@@ -384,8 +402,62 @@ def process_single_run(data_args, trainer_args, model_args, fold_index) -> pd.Da
     )
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     res.to_csv(save_path)
+    if hasattr(model.classifier, 'oof_probabilities_'):
+        save_stacking_diagnostics(model, save_path.parent)
     logger.info(f'Single run results saved to {save_path}')
     return res
+
+
+def save_stacking_diagnostics(model, output_dir: Path) -> None:
+    """Persist OOF predictions, correlations, and selected parameters."""
+    classifier = model.classifier
+    base_columns = [
+        f'base_{model_name}_probability'
+        for model_name in classifier.base_model_names
+    ]
+    oof_predictions = pd.DataFrame(
+        classifier.oof_probabilities_,
+        columns=base_columns,
+    )
+    oof_predictions.insert(0, 'stacking_fold', classifier.oof_fold_assignments_)
+    oof_predictions.insert(0, 'participant_id', classifier.oof_groups_)
+    oof_predictions.insert(0, 'label', classifier.oof_labels_)
+    oof_predictions['ensemble_probability'] = (
+        classifier.oof_ensemble_probabilities_
+    )
+    oof_predictions.to_csv(output_dir / 'stacking_oof_predictions.csv', index=False)
+
+    correlations = pd.DataFrame(
+        classifier.base_oof_correlation_,
+        index=base_columns,
+        columns=base_columns,
+    )
+    correlations.to_csv(output_dir / 'stacking_oof_correlations.csv')
+
+    oof_metrics = {
+        **{
+            f'base_{model_name}_auroc': value
+            for model_name, value in classifier.base_oof_auroc_.items()
+        },
+        'ensemble_auroc': classifier.ensemble_oof_auroc_,
+    }
+    pd.DataFrame([oof_metrics]).to_csv(
+        output_dir / 'stacking_oof_metrics.csv',
+        index=False,
+    )
+
+    hyperparameters = {
+        'feature_names': model.trial_level_feature_names,
+        'cross_fitted_base_models': classifier.selected_hyperparameters_,
+        'final_base_models': classifier.final_base_hyperparameters_,
+        'meta_learner': classifier.meta_best_params_,
+        'meta_coefficients': model.meta_coefficients_,
+    }
+    with (output_dir / 'stacking_hyperparameters.json').open(
+        'w',
+        encoding='utf-8',
+    ) as file:
+        json.dump(hyperparameters, file, indent=2, sort_keys=True)
 
 
 if __name__ == '__main__':

@@ -26,7 +26,7 @@ class LogisticRegressionMLArgs(MLModelArgs):
         sklearn_pipeline_param_clf__solver (str): Optimization algorithm.
         sklearn_pipeline_param_clf__random_state (int): Seed for pseudo-random number generator.
         sklearn_pipeline_param_clf__max_iter (int): Maximum number of solver iterations.
-        sklearn_pipeline_param_clf__class_weight (str): Class weight balancing strategy.
+        sklearn_pipeline_param_clf__class_weight (str | None): Class weight balancing strategy.
         sklearn_pipeline_param_scaler__with_mean (bool): Whether to center data before scaling.
         sklearn_pipeline_param_scaler__with_std (bool): Whether to scale data to unit variance.
     """
@@ -43,7 +43,7 @@ class LogisticRegressionMLArgs(MLModelArgs):
     sklearn_pipeline_param_clf__solver: str = 'lbfgs'
     sklearn_pipeline_param_clf__random_state: int = 1
     sklearn_pipeline_param_clf__max_iter: int = 1000
-    sklearn_pipeline_param_clf__class_weight: str = 'balanced'
+    sklearn_pipeline_param_clf__class_weight: str | None = None
     sklearn_pipeline_param_scaler__with_mean: bool = True
     sklearn_pipeline_param_scaler__with_std: bool = True
 

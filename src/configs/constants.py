@@ -304,6 +304,7 @@ class MLModelNames(StrEnum):
     """
 
     LOGISTIC_REGRESSION = 'LogisticRegressionMLModel'
+    STACKING_ENSEMBLE = 'StackingEnsembleMLModel'
     SVM = 'SupportVectorMachineMLModel'
     RANDOM_FOREST = 'RandomForestMLModel'
     DUMMY_CLASSIFIER = 'DummyClassifierMLModel'
