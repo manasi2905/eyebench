@@ -108,7 +108,7 @@ class PoTeCProcessor(DatasetProcessor):
 
             if not aoi_match.empty:
                 first_match = aoi_match.iloc[0]
-                word_values[i] = first_match['character']
+                word_values[i] = first_match['word']
                 aoi_values[i] = int(first_match['aoi'])
 
         return page_indices, word_values, aoi_values, start_line, end_line
@@ -155,7 +155,6 @@ class PoTeCProcessor(DatasetProcessor):
         )
 
         metrics['unique_paragraph_id'] = group['unique_paragraph_id'].iloc[0]
-        metrics['unique_trial_id'] = group['unique_trial_id'].iloc[0]
         metrics[Fields.FIXATION_REPORT_IA_ID_COL_NAME] = metrics['Token_idx']
 
         return metrics
@@ -239,32 +238,41 @@ class PoTeCProcessor(DatasetProcessor):
         ia_df['CURRENT_FIX_NEAREST_INTEREST_AREA_DISTANCE'] = 0
 
         # extract linguistic features
-        logger.info(
-            'Processing linguistic features in batches. This might take a while.'
-        )
+        logger.info('Processing linguistic features once per text.')
         nlp = spacy.load('de_core_news_sm')
         surp_extractor = get_surp_extractor(
             extractor_type=SurpExtractorType.CAT_CTX_LEFT,
             model_name='gpt2',
         )
 
-        groups = [group for _, group in ia_df.groupby('unique_trial_id')]
-        metrics_list = []
-        batch_size = 100
+        # Linguistic features depend only on the text. PoTeC contains many
+        # reader/question trials for the same 12 texts, so compute each text
+        # once. Keep this sequential because Hugging Face fast tokenizers are
+        # not safe to borrow concurrently from multiple Joblib threads.
+        groups = []
+        for _, paragraph_group in ia_df.groupby(Fields.UNIQUE_PARAGRAPH_ID):
+            representative_trial_id = paragraph_group['unique_trial_id'].iloc[0]
+            representative_group = paragraph_group[
+                paragraph_group['unique_trial_id'] == representative_trial_id
+            ].sort_values(Fields.FIXATION_REPORT_IA_ID_COL_NAME)
+            groups.append(representative_group)
 
-        for i in tqdm(range(0, len(groups), batch_size), desc='Processing batches'):
-            batch = Parallel(n_jobs=-1, backend='threading')(
-                delayed(self._extract_linguistic_features_for_group)(
-                    g, nlp, surp_extractor
-                )
-                for g in groups[i : i + batch_size]
+        metrics_list = [
+            self._extract_linguistic_features_for_group(
+                group,
+                nlp,
+                surp_extractor,
             )
-            metrics_list.extend(batch)
+            for group in tqdm(groups, desc='Processing texts')
+        ]
 
         metrics_df = pd.concat(metrics_list, ignore_index=True)
 
         # merge linguistic features
-        merge_keys = ['unique_trial_id', Fields.FIXATION_REPORT_IA_ID_COL_NAME]
+        merge_keys = [
+            Fields.UNIQUE_PARAGRAPH_ID,
+            Fields.FIXATION_REPORT_IA_ID_COL_NAME,
+        ]
         drop_cols = (set(ia_df.columns) & set(metrics_df.columns)) - set(merge_keys)
         ia_df = ia_df.merge(
             metrics_df.drop(columns=list(drop_cols) + ['Morph']).drop_duplicates(),

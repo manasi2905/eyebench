@@ -13,11 +13,42 @@ from src.configs.constants import DataSets
 logger.add('logs/preprocessing.log', level='INFO')
 
 BASE_OSF_URL = 'https://osf.io/download/'
+POTEC_REVISION = '63e4badfeb27ec315719b28736e5bfd1ec626ce7'
+POTEC_RAW_URL = (
+    f'https://raw.githubusercontent.com/DiLi-Lab/PoTeC/{POTEC_REVISION}'
+)
 AUXILIARY_FILES: dict[str, dict[str, str]] = {
     DataSets.MECO_L2: {  # Hosted on MECO L2: The Multilingual Eye-movement COrpus, L2 (English) - https://osf.io/q9h43
-        'MECOL2W1/demographics/joint.ind.diff.l2.rda': '4zu8d',
-        'MECOL2W2/demographics/joint.ind.diff.l2.w2.rda': 'keuvm',
-        'MECOL2/stimuli/texts.meco.l2.rda': 'zwfdb',
+        'MECOL2W1/demographics/joint.ind.diff.l2.rda': f'{BASE_OSF_URL}4zu8d',
+        'MECOL2W2/demographics/joint.ind.diff.l2.w2.rda': f'{BASE_OSF_URL}keuvm',
+        'MECOL2/stimuli/texts.meco.l2.rda': f'{BASE_OSF_URL}zwfdb',
+    },
+    DataSets.POTEC: {
+        'PoTeC/labels/participant_data.tsv': (
+            f'{POTEC_RAW_URL}/participants/participant_data.tsv'
+        ),
+        'PoTeC/labels/participant_response_accuracy.tsv': (
+            f'{POTEC_RAW_URL}/participants/participant_response_accuracy.tsv'
+        ),
+        'PoTeC/stimuli/stimuli.tsv': (
+            f'{POTEC_RAW_URL}/stimuli/stimuli/stimuli.tsv'
+        ),
+        **{
+            f'PoTeC/stimuli/word_aoi_{domain}{index}.tsv': (
+                f'{POTEC_RAW_URL}/stimuli/word_aoi_texts/'
+                f'word_aoi_{domain}{index}.tsv'
+            )
+            for domain in ('b', 'p')
+            for index in range(6)
+        },
+    },
+}
+
+# The PoTeC reading-measures archive was replaced upstream while retaining its
+# OSF URL. pymovements 0.25.0 still carries the checksum of the previous file.
+RESOURCE_MD5_OVERRIDES: dict[str, dict[str, str]] = {
+    DataSets.POTEC: {
+        'precomputed_reading_measures': 'b7ada7ca91f3a807d873598b821de88d',
     },
 }
 
@@ -27,7 +58,7 @@ def download_auxiliary_files(root: Path, dataset_name: str) -> None:
     if dataset_name not in AUXILIARY_FILES:
         return
 
-    for relative_path, resource_id in AUXILIARY_FILES[dataset_name].items():
+    for relative_path, url in AUXILIARY_FILES[dataset_name].items():
         destination = root / relative_path
         if destination.exists():
             logger.info(
@@ -35,7 +66,6 @@ def download_auxiliary_files(root: Path, dataset_name: str) -> None:
             )
             continue
 
-        url = f'{BASE_OSF_URL}{resource_id}'
         logger.info(f'Downloading {relative_path} from {url}')
         response = requests.get(url, stream=True, timeout=60)
         response.raise_for_status()
@@ -73,6 +103,14 @@ def convert_rda_to_csv(root: Path, dataset_name: str) -> None:
 def prepare_dataset_definition(dataset_name: str):
     """Prepare dataset definition with gaze files disabled."""
     dataset_def = pm.DatasetLibrary.get(dataset_name)
+
+    for resource in dataset_def.resources:
+        md5_override = RESOURCE_MD5_OVERRIDES.get(dataset_name, {}).get(
+            resource.content
+        )
+        if md5_override is not None:
+            resource.md5 = md5_override
+
     dataset_def.resources = ResourceDefinitions(
         [resource for resource in dataset_def.resources if resource.content != 'gaze']
     )

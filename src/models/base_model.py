@@ -661,6 +661,7 @@ class BaseMLModel(SharedBaseModel):
         #### features builder ###
         self.use_item_level_features: bool = (
             len(model_args.item_level_features_modes) > 0
+            or len(model_args.item_level_feature_names) > 0
         )
 
         self.batch_size = model_args.batch_size

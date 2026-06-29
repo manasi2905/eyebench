@@ -90,6 +90,9 @@ ml_models_cls=(
     "RandomForestMLArgs RandomForestMLModel TrainerML"
     "LogisticRegressionMLArgs LogisticRegressionMLModel TrainerML"
     "LogisticMeziereArgs LogisticRegressionMLModel TrainerML"
+    "StackingEnsembleMLArgs StackingEnsembleMLModel TrainerML"
+    "StackingEnsembleReadingSpeedMLArgs StackingEnsembleMLModel TrainerML"
+    "StackingEnsembleHeterogeneousMLArgs StackingEnsembleMLModel TrainerML"
     "DummyClassifierMLArgs DummyClassifierMLModel TrainerML"
 )
 
