@@ -119,6 +119,13 @@ mamba env create -f environment.yml
 conda activate eyebench
 ```
 
+On Apple Silicon macOS, use the CPU/MPS-compatible environment without CUDA:
+
+```bash
+mamba env create -f environment.macos.yml
+conda activate eyebench
+```
+
 ### 2. Download and Preprocess Data
 
 ```bash
@@ -142,6 +149,62 @@ wandb login
 ```bash
 python src/run/single_run/train.py +trainer=TrainerDL +model=RoberteyeWord +data=OneStop_RC
 ```
+
+Train the tuned, leakage-safe two-layer stacking ensemble for PoTeC domain
+expertise using the four proposal features:
+
+```bash
+WANDB_MODE=offline python src/run/single_run/train.py \
+  +trainer=TrainerML \
+  +model=StackingEnsembleMLArgs \
+  +data=PoTeC_DE \
+  data.fold_index=0
+```
+
+The base layer contains Logistic Regression, KNN, RBF-SVM, and Random Forest.
+Every base model is tuned inside participant-grouped cross-fitting folds;
+SVM and Random Forest probabilities are sigmoid-calibrated on group-safe
+splits. The second Logistic Regression is tuned with L1/L2 regularization on
+the four out-of-fold probability columns.
+
+Run all four PoTeC folds for both the four-feature model and the controlled
+reading-speed ablation:
+
+```bash
+python src/run/single_run/run_stacking_cv.py
+```
+
+Results are written to `results/stacking_potec_de_tuned/`. They include base
+and ensemble AUROC, probability correlations, selected validation thresholds,
+per-fold predictions, and the exact selected hyperparameters. Threshold
+tuning affects accuracy metrics only; AUROC is always calculated from the raw
+probabilities.
+
+Run the heterogeneous tabular stack, where each base receives its own feature
+view and reading speed is a separate fifth base:
+
+```bash
+python src/run/single_run/run_stacking_cv.py \
+  --feature-sets heterogeneous
+```
+
+Fuse those five held-out predictions with an existing neural model and compare
+the retained Logistic Regression meta-learner with the tiny MLP ablation:
+
+```bash
+# RoBERTEye-F
+python src/run/single_run/run_neural_late_fusion.py
+
+# PLM-AS-RM
+python src/run/single_run/run_neural_late_fusion.py \
+  --neural-model PLMASfArgs
+
+python src/run/single_run/summarize_stacking_experiments.py
+```
+
+Neural late fusion trains the meta-learner only on held-out validation
+predictions and evaluates it on test predictions. The report-ready comparison
+is saved under `results/stacking_potec_de_report/`.
 
 ### Run a Hyperparameter Sweep
 
@@ -243,4 +306,3 @@ EyeBench development is supported by:
 
 All datasets included in EyeBench follow their respective original licenses.
 Code released under the [MIT License](LICENSE).
-

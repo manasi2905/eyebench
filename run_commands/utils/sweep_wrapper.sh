@@ -92,6 +92,9 @@ ml_models_cls=(
     "KNNMLArgs KNNMLModel TrainerML"
     "LRKNNEnsembleMLArgs LRKNNEnsembleMLModel TrainerML"
     "LogisticMeziereArgs LogisticRegressionMLModel TrainerML"
+    "StackingEnsembleMLArgs StackingEnsembleMLModel TrainerML"
+    "StackingEnsembleReadingSpeedMLArgs StackingEnsembleMLModel TrainerML"
+    "StackingEnsembleHeterogeneousMLArgs StackingEnsembleMLModel TrainerML"
     "DummyClassifierMLArgs DummyClassifierMLModel TrainerML"
 )
 

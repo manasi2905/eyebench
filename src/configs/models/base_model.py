@@ -67,6 +67,9 @@ class BaseModelArgs:
     item_level_features_modes: list[ItemLevelFeaturesModes] = field(
         default_factory=list
     )
+    # Optional exact trial-level feature selection. When populated, this takes
+    # precedence over item_level_features_modes in ETDataset.
+    item_level_feature_names: list[str] = field(default_factory=list)
 
     batch_size: int = MISSING
     text_dim: int = -1

@@ -169,6 +169,16 @@ dl_search_space_by_model_name: dict[DLModelNames, dict] = {
 }
 
 ml_search_space_by_model_name: dict[MLModelNames, dict] = {
+    MLModelNames.STACKING_ENSEMBLE: {
+        'model': {
+            'parameters': {
+                'random_forest_n_estimators': {'values': [300]},
+                'stacking_n_splits': {'values': [4]},
+                'tuning_n_splits': {'values': [3]},
+                'calibration_n_splits': {'values': [3]},
+            }
+        }
+    },
     MLModelNames.XGBOOST: {
         'model': {
             'parameters': {

@@ -1,3 +1,4 @@
+import hashlib
 import itertools
 import os
 import warnings
@@ -482,9 +483,15 @@ class ETDataset(TorchDataset):
             str: The features identifier.
         """
 
+        model_cache_name = self.model_name
+        if cfg.model.item_level_feature_names:
+            feature_signature = '\0'.join(cfg.model.item_level_feature_names).encode()
+            feature_digest = hashlib.sha256(feature_signature).hexdigest()[:12]
+            model_cache_name = f'{model_cache_name}_{feature_digest}'
+
         return (
             FEATURES_CACHE_FOLDER
-            / (f'{self.data_name}_{self.prediction_mode}_{self.model_name}')
+            / (f'{self.data_name}_{self.prediction_mode}_{model_cache_name}')
             / f'fold_{cfg.data.fold_index}'
             / f'{self.regime_name}_{self.set_name}.pkl'
         )
@@ -809,13 +816,28 @@ class ETDataset(TorchDataset):
                 [ia_feature_names, fixation_feature_names],
                 axis=0,
             )
-            self.trial_level_feature_names = (
-                feature_names[
-                    feature_names['feature_type'].isin(self.item_level_features_modes)
-                ]['feature_name']
-                .drop_duplicates()
-                .tolist()
-            )
+            requested_feature_names = cfg.model.item_level_feature_names
+            if requested_feature_names:
+                available_feature_names = set(feature_names['feature_name'])
+                missing_feature_names = sorted(
+                    set(requested_feature_names) - available_feature_names
+                )
+                if missing_feature_names:
+                    raise ValueError(
+                        'Requested trial-level features are unavailable: '
+                        f'{missing_feature_names}'
+                    )
+                self.trial_level_feature_names = list(requested_feature_names)
+            else:
+                self.trial_level_feature_names = (
+                    feature_names[
+                        feature_names['feature_type'].isin(
+                            self.item_level_features_modes
+                        )
+                    ]['feature_name']
+                    .drop_duplicates()
+                    .tolist()
+                )
             logger.info(
                 f'Using {len(self.trial_level_feature_names)} trial level features.'
             )

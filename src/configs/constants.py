@@ -306,6 +306,7 @@ class MLModelNames(StrEnum):
     """
 
     LOGISTIC_REGRESSION = 'LogisticRegressionMLModel'
+    STACKING_ENSEMBLE = 'StackingEnsembleMLModel'
     SVM = 'SupportVectorMachineMLModel'
     KNN = 'KNNMLModel'
     LR_KNN_ENSEMBLE = 'LRKNNEnsembleMLModel'
