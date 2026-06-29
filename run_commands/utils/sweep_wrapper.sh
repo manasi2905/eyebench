@@ -89,6 +89,8 @@ ml_models_cls=(
     "XGBoostMLArgs XGBoostMLModel TrainerML"
     "RandomForestMLArgs RandomForestMLModel TrainerML"
     "LogisticRegressionMLArgs LogisticRegressionMLModel TrainerML"
+    "KNNMLArgs KNNMLModel TrainerML"
+    "LRKNNEnsembleMLArgs LRKNNEnsembleMLModel TrainerML"
     "LogisticMeziereArgs LogisticRegressionMLModel TrainerML"
     "StackingEnsembleMLArgs StackingEnsembleMLModel TrainerML"
     "StackingEnsembleReadingSpeedMLArgs StackingEnsembleMLModel TrainerML"

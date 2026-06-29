@@ -382,6 +382,39 @@ ml_search_space_by_model_name: dict[MLModelNames, dict] = {
             },
         },
     },
+    MLModelNames.KNN: {
+    'model': {
+        'parameters': {
+            'sklearn_pipeline_param_clf__n_neighbors': {
+                'values': [1, 3, 5, 7],
+            },
+            'sklearn_pipeline_param_clf__weights': {
+                'values': ['uniform', 'distance'],
+            },
+            'sklearn_pipeline_param_clf__p': {
+                'values': [1, 2],
+            },
+        },
+    },
+},
+MLModelNames.LR_KNN_ENSEMBLE: {
+    'model': {
+        'parameters': {
+            'sklearn_pipeline_param_clf__lr_weight': {
+                'values': [0.5, 0.6, 0.7, 0.8, 0.9],
+            },
+            'sklearn_pipeline_param_clf__knn_n_neighbors': {
+                'values': [1, 3, 5, 7],
+            },
+            'sklearn_pipeline_param_clf__knn_weights': {
+                'values': ['uniform', 'distance'],
+            },
+            'sklearn_pipeline_param_clf__knn_p': {
+                'values': [1, 2],
+            },
+        },
+    },
+},
 }
 
 search_space_by_model = dl_search_space_by_model_name | ml_search_space_by_model_name

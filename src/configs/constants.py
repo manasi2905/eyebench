@@ -293,6 +293,8 @@ class MLModelNames(StrEnum):
     Attributes:
         LOGISTIC_REGRESSION (str): Represents the logistic regression model.
         SVM (str): Represents the support vector machine model.
+        KNN (str): Represents the k-nearest neighbors model.
+        LR_KNN_ENSEMBLE (str): Represents the ensemble model combining logistic regression and k-nearest neighbors.
         RANDOM_FOREST (str): Represents the random forest model.
         DUMMY_CLASSIFIER (str): Represents the dummy classifier model.
         XGBOOST (str): Represents the XGBoost model.
@@ -306,6 +308,8 @@ class MLModelNames(StrEnum):
     LOGISTIC_REGRESSION = 'LogisticRegressionMLModel'
     STACKING_ENSEMBLE = 'StackingEnsembleMLModel'
     SVM = 'SupportVectorMachineMLModel'
+    KNN = 'KNNMLModel'
+    LR_KNN_ENSEMBLE = 'LRKNNEnsembleMLModel'
     RANDOM_FOREST = 'RandomForestMLModel'
     DUMMY_CLASSIFIER = 'DummyClassifierMLModel'
     XGBOOST = 'XGBoostMLModel'
